@@ -27,9 +27,9 @@ let earth_sun_dist;
 let earth_moon_dist;
 
 let t_days = 0;
-let earth_rot = 1;
-let earth_orbit = 365;
-let moon_orbit = 28;
+let earth_rot = 23.9344696/24;
+let earth_orbit = 365.25;
+let moon_orbit = 27.322;
 let sun_x = 0;
 let sun_y = 0;
 let scale = 1;
@@ -40,6 +40,7 @@ let earth_y;
 let moon_x;
 let moon_y;
 let adjustment = 0;
+let moon_lha = 0;
 
 const adjustScale = (tVal, vVal, t) => {
     const logA = Math.log(tVal);
@@ -74,7 +75,7 @@ const drawShadowLine = () => {
     moveTo(sun_x, sun_y);
     lineTo(x, y);
     ctx.stroke();
-};
+};2
 
 const project = (x, y) => {
     return [
@@ -85,6 +86,9 @@ const project = (x, y) => {
 
 const moveTo = (x, y) => ctx.moveTo(...project(x, y));
 const lineTo = (x, y) => ctx.lineTo(...project(x, y));
+const arc = (x, y, rad, ang1, ang2) => {
+    ctx.arc(...project(x, y), rad, ang1, ang2, true);
+};
 const circle = (x, y, rad, color) => {
     ctx.fillStyle = color;
     ctx.beginPath();
@@ -93,16 +97,46 @@ const circle = (x, y, rad, color) => {
 };
 
 const drawEarthLine = () => {
-    let ax = earth_x + earth_rad*sin(t_days/earth_rot*TAU);
-    let ay = earth_y + earth_rad*cos(t_days/earth_rot*TAU);
-    let bx = earth_x - earth_rad*sin(t_days/earth_rot*TAU);
-    let by = earth_y - earth_rad*cos(t_days/earth_rot*TAU);
+    let ax = earth_x; // + earth_rad*cos(t_days/earth_rot*TAU);
+    let ay = earth_y; // - earth_rad*sin(t_days/earth_rot*TAU);
+    let bx = earth_x - earth_rad*cos(t_days/earth_rot*TAU);
+    let by = earth_y + earth_rad*sin(t_days/earth_rot*TAU);
 
     ctx.strokeStyle = '#fff';
     ctx.beginPath();
     moveTo(ax, ay);
     lineTo(bx, by);
     ctx.stroke();
+};
+
+const writeInfo = () => {
+    ctx.fillStyle = '#fff';
+    ctx.textBaseline = 'top';
+    ctx.textAlign = 'left';
+    ctx.font = '16px monospace';
+    ctx.fillText('Days: ' + Number(t_days.toFixed(4)),   10, 35);
+    ctx.fillText('LHA: '  + Number(moon_lha.toFixed(1)), 10, 10);
+};
+
+const drawExtendedDashedLines = () => {
+    const earth_dir = (TAU*1.5 - (t_days/earth_rot*TAU) % TAU) % TAU;
+    const dx = moon_x - earth_x;
+    const dy = moon_y - earth_y;
+    const dist = Math.sqrt(dx**2 + dy**2);
+    const ax = earth_x + dist * cos(earth_dir);
+    const ay = earth_y + dist * sin(earth_dir);
+    const abs = Math.acos(dx / dist);
+    const moonDir = dy < 0 ? TAU - abs : abs;
+    moon_lha = (moonDir - earth_dir + TAU) % TAU / PI * 180;
+    
+    ctx.strokeStyle = '#0f7';
+    ctx.setLineDash([ 5, 5 ]);
+    ctx.beginPath();
+    moveTo(ax, ay);
+    lineTo(earth_x, earth_y);
+    arc(earth_x, earth_y, dist, moonDir, earth_dir);
+    ctx.stroke();
+    ctx.setLineDash([]);
 };
 
 const render = () => {
@@ -132,6 +166,8 @@ const render = () => {
     circle(moon_x, moon_y, moon_rad, '#777');
     drawShadowLine();
     drawEarthLine();
+    drawExtendedDashedLines();
+    writeInfo();
 };
 
 document.querySelectorAll('input').forEach(e => e.addEventListener('input', () => {
