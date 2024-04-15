@@ -87,7 +87,7 @@ const project = (x, y) => {
 const moveTo = (x, y) => ctx.moveTo(...project(x, y));
 const lineTo = (x, y) => ctx.lineTo(...project(x, y));
 const arc = (x, y, rad, ang1, ang2) => {
-    ctx.arc(...project(x, y), rad, ang1, ang2, true);
+    ctx.arc(...project(x, y), rad*scale, ang1, ang2, true);
 };
 const circle = (x, y, rad, color) => {
     ctx.fillStyle = color;
